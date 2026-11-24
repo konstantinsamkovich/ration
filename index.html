@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#172d25">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="stylesheet" href="./style.css">
+  <script src="./app.js" defer></script>
+  <title>Рацион — дневник КБЖУ</title>
+</head>
+<body>
+  <header class="top"><div class="wrap bar">
+    <div class="brand"><span class="logo" aria-hidden="true">Р</span> Рацион</div>
+    <button id="settings" class="quiet">Цели</button>
+  </div></header>
+  <main class="wrap">
+    <div class="heading"><div><p class="eyebrow">ДНЕВНИК ПИТАНИЯ</p><h1 id="day-title">Сегодня</h1></div>
+      <div class="date-tools">
+        <button id="previous" aria-label="Предыдущий день">‹</button>
+        <input id="date" type="date" aria-label="Дата дневника">
+        <button id="next" aria-label="Следующий день">›</button>
+        <button id="today" class="quiet">Сегодня</button>
+      </div>
+    </div>
+    <section class="summary" aria-labelledby="summary-title">
+      <h2 id="summary-title">Итого за день</h2>
+      <div id="totals" class="totals" aria-live="polite"></div>
+    </section>
+    <div class="columns">
+      <section class="panel">
+        <div class="section-head"><h2>Продукты</h2><button class="primary" id="add">＋ Добавить</button></div>
+        <div id="foods"></div>
+      </section>
+      <section class="panel">
+        <h2>Вес и заметка</h2>
+        <form id="details" class="stack">
+          <label>Вес, кг<input name="weight" inputmode="decimal" placeholder="Например, 75,5" maxlength="12"></label>
+          <label>Заметка<textarea name="note" rows="3" placeholder="Что хочешь запомнить?" maxlength="1000"></textarea></label>
+          <button class="quiet" type="submit">Сохранить</button>
+          <output id="details-status"></output>
+        </form>
+      </section>
+    </div>
+    <section class="panel history">
+      <div class="section-head"><h2>История</h2><span class="muted">Дни с записями</span></div>
+      <div id="history"></div>
+    </section>
+    <p class="muted footer">Данные хранятся на этом устройстве.</p>
+    <p id="storage-error" role="alert"></p>
+  </main>
+  <dialog id="food-dialog" aria-labelledby="food-title">
+    <form id="food-form" class="stack">
+      <div class="section-head"><h2 id="food-title">Добавить продукт</h2><button type="button" data-close aria-label="Закрыть">×</button></div>
+      <label>Название<input name="name" maxlength="100" placeholder="Например, творог" required></label>
+      <label>Вес порции, г<input name="grams" inputmode="decimal" maxlength="12" placeholder="150" required></label>
+      <fieldset><legend>На 100 г продукта</legend><div id="food-fields" class="form-grid"></div></fieldset>
+      <output id="preview" aria-live="polite">Заполни поля, чтобы увидеть КБЖУ порции.</output>
+      <div class="actions"><button type="button" id="remove" class="danger" hidden>Удалить</button><button type="submit" class="primary">Сохранить</button></div>
+    </form>
+  </dialog>
+  <dialog id="goal-dialog" aria-labelledby="goal-title">
+    <form id="goal-form" class="stack">
+      <div class="section-head"><h2 id="goal-title">Цели на день</h2><button type="button" data-close aria-label="Закрыть">×</button></div>
+      <p class="muted">Оставь верхнюю границу пустой, если важен только минимум.</p>
+      <div id="goal-fields" class="stack"></div>
+      <div class="actions"><button type="submit" class="primary">Сохранить цели</button></div>
+    </form>
+  </dialog>
+</body>
+</html>
