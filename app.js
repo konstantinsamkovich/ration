@@ -9,14 +9,18 @@ const number = new Intl.NumberFormat('ru', { maximumFractionDigits: 2 });
 const longDate = new Intl.DateTimeFormat('ru', { day: 'numeric', month: 'long', weekday: 'long' });
 const storageKey = 'ration-diary-v1';
 const emptyDay = () => ({ foods: [], weight: '', note: '' });
-let state = { goals: Object.fromEntries(metrics.map(({ key, min, max }) => [key, { min, max }])), days: {} };
+let state = { goals: Object.fromEntries(metrics.map(({ key, min, max }) => [key, { min, max }])), days: {}, presets: {} };
 let selected = dateKey(new Date());
 let editing = null;
 let storageReadable = true;
 
 try {
   const saved = localStorage.getItem(storageKey);
-  if (saved) state = JSON.parse(saved);
+  if (saved) {
+    state = JSON.parse(saved);
+    state.presets ??= Object.fromEntries(Object.keys(state.days).sort().flatMap((date) =>
+      state.days[date].foods.map(({ name, values }) => [presetKey(name), { name, values }])));
+  }
 } catch {
   storageReadable = false;
   byId('storage-error').textContent = 'Не удалось открыть сохранённый дневник.';
@@ -90,10 +94,14 @@ function day() {
   return state.days[selected] || emptyDay();
 }
 
-function saveDay(entry) {
+function saveDay(entry, presets = state.presets) {
   const days = { ...state.days, [selected]: entry };
   if (!entry.foods.length && !entry.weight && !entry.note) delete days[selected];
-  return save({ ...state, days });
+  return save({ ...state, days, presets });
+}
+
+function presetKey(name) {
+  return name.trim().toLocaleLowerCase('ru');
 }
 
 function render() {
@@ -220,6 +228,8 @@ const foodForm = byId('food-form');
 const goalForm = byId('goal-form');
 const foodDialog = byId('food-dialog');
 const goalDialog = byId('goal-dialog');
+const presetSelect = byId('preset');
+const foodInfo = byId('food-info');
 for (const { key, name, unit } of metrics) {
   byId('food-fields').append(numericField(key, name + ', ' + unit));
   const group = element('fieldset', undefined, 'goal-row');
@@ -240,6 +250,11 @@ function openFood(index = null) {
   foodForm.reset();
   for (const input of foodForm.querySelectorAll('input')) input.setCustomValidity('');
   const food = day().foods[index];
+  const presets = Object.entries(state.presets).sort(([, first], [, second]) => first.name.localeCompare(second.name, 'ru'));
+  presetSelect.replaceChildren(new Option('Новый продукт', ''), ...presets.map(([key, preset]) => new Option(preset.name, key)));
+  byId('preset-field').hidden = Boolean(food) || !presets.length;
+  byId('remember-field').hidden = Boolean(food);
+  foodInfo.open = true;
   byId('food-title').textContent = food ? 'Изменить продукт' : 'Добавить продукт';
   byId('remove').hidden = !food;
   if (food) {
@@ -249,9 +264,28 @@ function openFood(index = null) {
   }
   updatePreview();
   foodDialog.showModal();
+  (presets.length && !food ? presetSelect : foodForm.elements.grams).focus();
 }
 
+presetSelect.onchange = () => {
+  const preset = Object.hasOwn(state.presets, presetSelect.value) ? state.presets[presetSelect.value] : null;
+  const name = foodForm.elements.namedItem('name');
+  name.value = preset?.name ?? '';
+  name.setCustomValidity('');
+  for (const { key } of metrics) {
+    const input = foodForm.elements[key];
+    input.value = preset?.values[key] ?? '';
+    input.setCustomValidity('');
+  }
+  foodInfo.open = !preset;
+  updatePreview();
+  (preset ? foodForm.elements.grams : name).focus();
+};
+
 foodForm.addEventListener('input', updatePreview);
+foodForm.addEventListener('invalid', ({ target }) => {
+  if (foodInfo.contains(target)) foodInfo.open = true;
+}, true);
 foodForm.onsubmit = (event) => {
   event.preventDefault();
   const nameInput = foodForm.elements.namedItem('name');
@@ -270,7 +304,9 @@ foodForm.onsubmit = (event) => {
   }
   const foods = [...day().foods];
   foods[editing ?? foods.length] = { name, grams, values };
-  if (saveDay({ ...day(), foods })) {
+  const presets = editing === null && foodForm.elements.remember.checked
+    ? { ...state.presets, [presetKey(name)]: { name, values } } : state.presets;
+  if (saveDay({ ...day(), foods }, presets)) {
     foodDialog.close();
     render();
     byId('add').focus();

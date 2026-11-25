@@ -55,9 +55,16 @@
   <dialog id="food-dialog" aria-labelledby="food-title">
     <form id="food-form" class="stack">
       <div class="section-head"><h2 id="food-title">Добавить продукт</h2><button type="button" data-close aria-label="Закрыть">×</button></div>
-      <label>Название<input name="name" maxlength="100" placeholder="Например, творог" required></label>
+      <label id="preset-field" hidden>Сохранённый продукт<select id="preset"></select></label>
       <label>Вес порции, г<input name="grams" inputmode="decimal" maxlength="12" placeholder="150" required></label>
-      <fieldset><legend>На 100 г продукта</legend><div id="food-fields" class="form-grid"></div></fieldset>
+      <details id="food-info" open>
+        <summary>Название и КБЖУ на 100 г</summary>
+        <div class="stack food-info">
+          <label>Название<input name="name" maxlength="100" placeholder="Например, творог" required></label>
+          <div id="food-fields" class="form-grid"></div>
+        </div>
+      </details>
+      <label class="check" id="remember-field"><input name="remember" type="checkbox" checked> Запомнить для следующих порций</label>
       <output id="preview" aria-live="polite">Заполни поля, чтобы увидеть КБЖУ порции.</output>
       <div class="actions"><button type="button" id="remove" class="danger" hidden>Удалить</button><button type="submit" class="primary">Сохранить</button></div>
     </form>
