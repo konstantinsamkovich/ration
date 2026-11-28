@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#172d25">
+  <meta name="theme-color" content="#edf5f0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon-192.png">
@@ -58,14 +58,21 @@
       <label id="preset-field" hidden>Сохранённый продукт<select id="preset"></select></label>
       <label>Вес порции, г<input name="grams" inputmode="decimal" maxlength="12" placeholder="150" required></label>
       <details id="food-info" open>
-        <summary>Название и КБЖУ на 100 г</summary>
+        <summary>Название и КБЖУ</summary>
         <div class="stack food-info">
           <label>Название<input name="name" maxlength="100" placeholder="Например, творог" required></label>
+          <fieldset class="basis">
+            <legend>Значения КБЖУ</legend>
+            <div class="segments">
+              <label><input type="radio" name="basis" value="100" checked><span>На 100 г</span></label>
+              <label><input type="radio" name="basis" value="portion"><span>На всю порцию</span></label>
+            </div>
+          </fieldset>
           <div id="food-fields" class="form-grid"></div>
         </div>
       </details>
       <label class="check" id="remember-field"><input name="remember" type="checkbox" checked> Запомнить для следующих порций</label>
-      <output id="preview" aria-live="polite">Заполни поля, чтобы увидеть КБЖУ порции.</output>
+      <output id="preview" aria-live="polite">Заполни поля, чтобы увидеть расчёт.</output>
       <div class="actions"><button type="button" id="remove" class="danger" hidden>Удалить</button><button type="submit" class="primary">Сохранить</button></div>
     </form>
   </dialog>

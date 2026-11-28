@@ -57,7 +57,8 @@ function element(tag, text, className) {
 }
 
 function portion(food, key) {
-  return food.values[key] * food.grams / 100;
+  const reference = food.referenceGrams ?? 100;
+  return food.values[key] * (food.grams / reference);
 }
 
 function totals(foods) {
@@ -200,7 +201,8 @@ function shiftDate(offset) {
 
 function numericValue(input) {
   const value = input.value.trim();
-  return /^\d+(?:[.,]\d{1,2})?$/.test(value) ? Number(value.replace(',', '.')) : NaN;
+  const pattern = input.dataset.nutrient ? /^\d+(?:[.,]\d{1,8})?$/ : /^\d+(?:[.,]\d{1,2})?$/;
+  return pattern.test(value) ? Number(value.replace(',', '.')) : NaN;
 }
 
 function readNumber(input, { optional = false, positive = false } = {}) {
@@ -208,7 +210,8 @@ function readNumber(input, { optional = false, positive = false } = {}) {
   const value = numericValue(input);
   if (Number.isFinite(value) && (!positive || value > 0)) return value;
   input.setCustomValidity(positive ? 'Введи число больше нуля, до двух знаков после запятой.' :
-    'Введи число от нуля, до двух знаков после запятой.');
+    input.dataset.nutrient ? 'Введи число от нуля, до восьми знаков после запятой.' :
+      'Введи число от нуля, до двух знаков после запятой.');
   input.reportValidity();
   return NaN;
 }
@@ -231,7 +234,11 @@ const goalDialog = byId('goal-dialog');
 const presetSelect = byId('preset');
 const foodInfo = byId('food-info');
 for (const { key, name, unit } of metrics) {
-  byId('food-fields').append(numericField(key, name + ', ' + unit));
+  const field = numericField(key, name + ', ' + unit);
+  const input = field.querySelector('input');
+  input.dataset.nutrient = 'true';
+  input.maxLength = 24;
+  byId('food-fields').append(field);
   const group = element('fieldset', undefined, 'goal-row');
   group.append(element('legend', name + ', ' + unit), numericField(key + '-min', 'Минимум'),
     numericField(key + '-max', 'Максимум', false));
@@ -241,8 +248,20 @@ for (const { key, name, unit } of metrics) {
 function updatePreview() {
   const grams = numericValue(foodForm.elements.grams);
   const values = Object.fromEntries(metrics.map(({ key }) => [key, numericValue(foodForm.elements[key])]));
-  byId('preview').textContent = grams > 0 && Object.values(values).every(Number.isFinite)
-    ? describe(totals([{ grams, values }])) : 'Заполни поля, чтобы увидеть КБЖУ порции.';
+  const preview = byId('preview');
+  if (!(grams > 0 && Object.values(values).every(Number.isFinite))) {
+    preview.textContent = 'Заполни поля, чтобы увидеть расчёт.';
+    return;
+  }
+  const referenceGrams = foodForm.elements.basis.value === 'portion' ? grams : 100;
+  preview.replaceChildren(
+    element('span', 'На 100 г · ' + describe(totals([{ grams: 100, values, referenceGrams }]))),
+    element('span', 'На порцию (' + number.format(grams) + ' г) · ' + describe(totals([{ grams, values, referenceGrams }])))
+  );
+}
+
+function decimalInput(value) {
+  return value.toLocaleString('en-US', { useGrouping: false, maximumFractionDigits: 8 });
 }
 
 function openFood(index = null) {
@@ -260,7 +279,8 @@ function openFood(index = null) {
   if (food) {
     foodForm.elements.namedItem('name').value = food.name;
     foodForm.elements.grams.value = food.grams;
-    for (const { key } of metrics) foodForm.elements[key].value = food.values[key];
+    foodForm.elements.basis.value = food.referenceGrams ? 'portion' : '100';
+    for (const { key } of metrics) foodForm.elements[key].value = decimalInput(food.values[key]);
   }
   updatePreview();
   foodDialog.showModal();
@@ -272,9 +292,10 @@ presetSelect.onchange = () => {
   const name = foodForm.elements.namedItem('name');
   name.value = preset?.name ?? '';
   name.setCustomValidity('');
+  foodForm.elements.basis.value = '100';
   for (const { key } of metrics) {
     const input = foodForm.elements[key];
-    input.value = preset?.values[key] ?? '';
+    input.value = preset ? decimalInput(portion({ ...preset, grams: 100 }, key)) : '';
     input.setCustomValidity('');
   }
   foodInfo.open = !preset;
@@ -303,9 +324,11 @@ foodForm.onsubmit = (event) => {
     if (Number.isNaN(values[key])) return;
   }
   const foods = [...day().foods];
-  foods[editing ?? foods.length] = { name, grams, values };
+  const isWholePortion = foodForm.elements.basis.value === 'portion';
+  const nutrition = isWholePortion ? { values, referenceGrams: grams } : { values };
+  foods[editing ?? foods.length] = { name, grams, ...nutrition };
   const presets = editing === null && foodForm.elements.remember.checked
-    ? { ...state.presets, [presetKey(name)]: { name, values } } : state.presets;
+    ? { ...state.presets, [presetKey(name)]: { name, ...nutrition } } : state.presets;
   if (saveDay({ ...day(), foods }, presets)) {
     foodDialog.close();
     render();
