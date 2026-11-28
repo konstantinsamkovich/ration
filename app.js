@@ -284,7 +284,6 @@ function openFood(index = null) {
   }
   updatePreview();
   foodDialog.showModal();
-  (presets.length && !food ? presetSelect : foodForm.elements.grams).focus();
 }
 
 presetSelect.onchange = () => {
