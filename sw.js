@@ -1,4 +1,4 @@
-const cacheName = 'ration-shell-v3';
+const cacheName = 'ration-shell-v4';
 const shell = ['./', './index.html', './style.css', './app.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {

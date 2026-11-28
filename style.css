@@ -86,6 +86,9 @@ fieldset{margin:0;border:1px solid var(--line);border-radius:12px;min-width:0}
 [hidden]{display:none!important}
 select{width:100%}
 summary{cursor:pointer;font-weight:650;padding:8px 0}
+#preset-label{min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:#fff;overflow-wrap:anywhere}
+#preset-options{display:grid;gap:4px;max-height:180px;overflow:auto;margin-top:5px}
+#preset-options button{text-align:left;border-radius:12px;overflow-wrap:anywhere}
 .food-info{padding-top:5px}
 .check{display:flex;align-items:center;gap:8px}
 .check input{width:20px;min-height:20px;accent-color:var(--green)}

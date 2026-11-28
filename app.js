@@ -231,7 +231,8 @@ const foodForm = byId('food-form');
 const goalForm = byId('goal-form');
 const foodDialog = byId('food-dialog');
 const goalDialog = byId('goal-dialog');
-const presetSelect = byId('preset');
+const presetField = byId('preset-field');
+const presetLabel = byId('preset-label');
 const foodInfo = byId('food-info');
 for (const { key, name, unit } of metrics) {
   const field = numericField(key, name + ', ' + unit);
@@ -270,8 +271,15 @@ function openFood(index = null) {
   for (const input of foodForm.querySelectorAll('input')) input.setCustomValidity('');
   const food = day().foods[index];
   const presets = Object.entries(state.presets).sort(([, first], [, second]) => first.name.localeCompare(second.name, 'ru'));
-  presetSelect.replaceChildren(new Option('Новый продукт', ''), ...presets.map(([key, preset]) => new Option(preset.name, key)));
-  byId('preset-field').hidden = Boolean(food) || !presets.length;
+  presetField.open = false;
+  presetLabel.textContent = 'Сохранённый продукт';
+  byId('preset-options').replaceChildren(...[['', null], ...presets].map(([key, preset]) => {
+    const button = element('button', preset?.name ?? 'Новый продукт');
+    button.type = 'button';
+    button.onclick = () => choosePreset(key);
+    return button;
+  }));
+  presetField.hidden = Boolean(food) || !presets.length;
   byId('remember-field').hidden = Boolean(food);
   foodInfo.open = true;
   byId('food-title').textContent = food ? 'Изменить продукт' : 'Добавить продукт';
@@ -286,8 +294,10 @@ function openFood(index = null) {
   foodDialog.showModal();
 }
 
-presetSelect.onchange = () => {
-  const preset = Object.hasOwn(state.presets, presetSelect.value) ? state.presets[presetSelect.value] : null;
+function choosePreset(key) {
+  const preset = Object.hasOwn(state.presets, key) ? state.presets[key] : null;
+  presetField.open = false;
+  presetLabel.textContent = preset?.name ?? 'Сохранённый продукт';
   const name = foodForm.elements.namedItem('name');
   name.value = preset?.name ?? '';
   name.setCustomValidity('');
@@ -300,7 +310,7 @@ presetSelect.onchange = () => {
   foodInfo.open = !preset;
   updatePreview();
   (preset ? foodForm.elements.grams : name).focus();
-};
+}
 
 foodForm.addEventListener('input', updatePreview);
 foodForm.addEventListener('invalid', ({ target }) => {
